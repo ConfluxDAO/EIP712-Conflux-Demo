@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
 module.exports = {
-  solidity: "0.8.18",
+  solidity: "0.8.24",
   networks: {
     eSpaceTestnet: {
       url: "https://evmtestnet.confluxrpc.com",
