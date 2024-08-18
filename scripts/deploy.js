@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  const EIP712Storage = await hre.ethers.getContractFactory("EIP712Storage");
+  const EIP712Storage = await hre.ethers.getContractFactory("EIP712Voting");
   const eip712Storage = await EIP712Storage.deploy();
 
   // 等待合约部署完成
