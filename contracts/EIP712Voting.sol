@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 contract EIP712Voting is EIP712 {
     using ECDSA for bytes32;
 
-    mapping(address => bool) public hasVoted;
     mapping(uint256 => uint256) public voteCount;
 
     bytes32 private constant VOTE_TYPEHASH = keccak256("Vote(address voter,uint256 proposal,uint256 nonce)");
@@ -24,9 +23,7 @@ contract EIP712Voting is EIP712 {
         address signer = ECDSA.recover(hash, signature);
         
         require(signer == msg.sender, "EIP712Voting: Invalid signature");
-        require(!hasVoted[signer], "EIP712Voting: Already voted");
 
-        hasVoted[signer] = true;
         voteCount[proposal]++;
         nonces[signer]++;
 

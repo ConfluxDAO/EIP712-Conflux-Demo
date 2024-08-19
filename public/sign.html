@@ -1,127 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EIP-712 Voting with MetaMask (ethers.js v6.7.0)</title>
-  </head>
-  <body>
-    <h1>EIP-712 Voting with MetaMask (ethers.js v6.7.0)</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIP-712 Voting with MetaMask</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { margin: 10px 0; padding: 10px; }
+        #status, #result, #voteInfo { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>EIP-712 Voting with MetaMask</h1>
     <button id="connectButton">Connect MetaMask</button>
     <div id="status"></div>
-    <div id="votingSection" style="display: none">
-      <h2>Cast Your Vote</h2>
-      <input
-        type="number"
-        id="proposalInput"
-        placeholder="Enter proposal number"
-      />
-      <button id="voteButton">Vote</button>
+    <div id="votingSection" style="display:none;">
+        <h2>Cast Your Vote</h2>
+        <input type="number" id="proposalInput" placeholder="Enter proposal number">
+        <button id="voteButton">Vote</button>
     </div>
     <div id="result"></div>
+    <div id="voteInfo"></div>
+    <button id="checkVoteButton" style="display:none;">Check My Vote</button>
 
     <script type="module">
-      import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
-      const contractAddress = "0xDD1184EeC78eD419d948887B8793E64a62f13895";
-      const contractABI = [
-        "function nonces(address owner) view returns (uint256)",
-        "function castVote(uint256 proposal, uint8 v, bytes32 r, bytes32 s) external",
-        "function getVoteCount(uint256 proposal) view returns (uint256)",
-      ];
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
 
-      let provider, signer, contract;
-      const connectButton = document.getElementById("connectButton");
-      const statusDiv = document.getElementById("status");
-      const votingSection = document.getElementById("votingSection");
-      const proposalInput = document.getElementById("proposalInput");
-      const voteButton = document.getElementById("voteButton");
-      const resultDiv = document.getElementById("result");
+        const contractAddress = "0xFbABDdFc6106ef4fF6F317b3F8CC9818b0D5316F";
+        const contractABI = [
+            "function nonces(address owner) view returns (uint256)",
+            "function castVote(uint256 proposal, bytes memory signature) external",
+            "function getVoteCount(uint256 proposal) view returns (uint256)",
+            "function getVoterProposal(address voter) view returns (uint256)" // 假设合约中有这个函数
+        ];
 
-      let connecting = false;
-      connectButton.addEventListener("click", async () => {
-        if (connecting) return;
-        connecting = true;
-        statusDiv.innerHTML = "Connecting...";
-        try {
-          if (typeof window.ethereum !== "undefined") {
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            provider = new ethers.BrowserProvider(window.ethereum);
-            signer = await provider.getSigner();
-            contract = new ethers.Contract(
-              contractAddress,
-              contractABI,
-              signer
-            );
+        let provider, signer, contract;
 
-            const address = await signer.getAddress();
-            statusDiv.innerHTML = `Connected with address: ${address}`;
-            votingSection.style.display = "block";
-            console.log("MetaMask connected successfully");
-          } else {
-            statusDiv.innerHTML = "Please install MetaMask";
-          }
-        } catch (error) {
-          console.error("Connection error:", error);
-          statusDiv.innerHTML = "Failed to connect: " + error.message;
-        } finally {
-          connecting = false;
-        }
-      });
+        const connectButton = document.getElementById('connectButton');
+        const statusDiv = document.getElementById('status');
+        const votingSection = document.getElementById('votingSection');
+        const proposalInput = document.getElementById('proposalInput');
+        const voteButton = document.getElementById('voteButton');
+        const resultDiv = document.getElementById('result');
+        const voteInfoDiv = document.getElementById('voteInfo');
+        const checkVoteButton = document.getElementById('checkVoteButton');
 
-      voteButton.addEventListener("click", async () => {
-        const proposal = proposalInput.value;
-        if (!proposal) {
-          alert("Please enter a proposal number");
-          return;
-        }
+        connectButton.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    
+                    const address = await signer.getAddress();
+                    statusDiv.innerHTML = `Connected with address: ${address}`;
+                    votingSection.style.display = 'block';
+                    checkVoteButton.style.display = 'block';
+                } catch (error) {
+                    console.error(error);
+                    statusDiv.innerHTML = 'Failed to connect to MetaMask';
+                }
+            } else {
+                statusDiv.innerHTML = 'Please install MetaMask';
+            }
+        });
 
-        try {
-          const address = await signer.getAddress();
-          console.log("Fetching nonce for address:", address);
-          const nonce = await contract.nonces(address);
-          console.log("Nonce:", nonce.toString());
+        voteButton.addEventListener('click', async () => {
+            const proposal = proposalInput.value;
+            if (!proposal) {
+                alert('Please enter a proposal number');
+                return;
+            }
 
-          const domain = {
-            name: "EIP712Voting",
-            version: "1",
-            chainId: (await provider.getNetwork()).chainId,
-            verifyingContract: contractAddress,
-          };
+            try {
+                const address = await signer.getAddress();
+                const nonce = await contract.nonces(address);
 
-          const types = {
-            Vote: [
-              { name: "voter", type: "address" },
-              { name: "proposal", type: "uint256" },
-              { name: "nonce", type: "uint256" },
-            ],
-          };
+                const domain = {
+                    name: "EIP712Voting",
+                    version: "1",
+                    chainId: Number((await provider.getNetwork()).chainId),
+                    verifyingContract: contractAddress
+                };
 
-          const message = {
-            voter: address,
-            proposal: BigInt(proposal),
-            nonce: nonce,
-          };
+                const types = {
+                    Vote: [
+                        { name: "voter", type: "address" },
+                        { name: "proposal", type: "uint256" },
+                        { name: "nonce", type: "uint256" }
+                    ]
+                };
 
-          console.log("Signing message:", message);
+                const value = {
+                    voter: address,
+                    proposal: BigInt(proposal),
+                    nonce: nonce
+                };
 
-          const signature = await signer.signTypedData(domain, types, message);
-          console.log("Signature:", signature);
+                const signature = await signer.signTypedData(domain, types, value);
 
-          // Split the signature
-          const sig = ethers.Signature.from(signature);
+                const tx = await contract.castVote(proposal, signature);
+                await tx.wait();
 
-          console.log("Casting vote...");
-          const tx = await contract.castVote(proposal, sig.v, sig.r, sig.s);
-          await tx.wait();
-          console.log("Vote cast successfully");
+                const voteCount = await contract.getVoteCount(proposal);
+                resultDiv.innerHTML = `Vote cast successfully! Current vote count for proposal ${proposal}: ${voteCount}`;
+                
+                // 立即检查并显示投票信息
+                await checkVote();
+            } catch (error) {
+                console.error("Voting error:", error);
+                
+                let errorMessage = error.message;
+                if (error.data && typeof error.data.message === 'string') {
+                    const match = error.data.message.match(/execution reverted: (.*?)(?:\.?$)/);
+                    if (match) {
+                        errorMessage = match[1];
+                    }
+                }
+                
+                resultDiv.innerHTML = 'Failed to cast vote: ' + errorMessage;
+            }
+        });
 
-          const voteCount = await contract.getVoteCount(proposal);
-          resultDiv.innerHTML = `Vote cast successfully! Current vote count for proposal ${proposal}: ${voteCount}`;
-        } catch (error) {
-          console.error("Voting error:", error);
-          resultDiv.innerHTML = "Failed to cast vote: " + error.message;
-        }
-      });
     </script>
-  </body>
+</body>
 </html>
