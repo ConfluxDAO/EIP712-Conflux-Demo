@@ -22,7 +22,6 @@
     </div>
     <div id="result"></div>
     <div id="voteInfo"></div>
-    <button id="checkVoteButton" style="display:none;">Check My Vote</button>
 
     <script type="module">
         import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
@@ -57,7 +56,6 @@
                     const address = await signer.getAddress();
                     statusDiv.innerHTML = `Connected with address: ${address}`;
                     votingSection.style.display = 'block';
-                    checkVoteButton.style.display = 'block';
                 } catch (error) {
                     console.error(error);
                     statusDiv.innerHTML = 'Failed to connect to MetaMask';
@@ -108,7 +106,6 @@
                 resultDiv.innerHTML = `Vote cast successfully! Current vote count for proposal ${proposal}: ${voteCount}`;
                 
                 // 立即检查并显示投票信息
-                await checkVote();
             } catch (error) {
                 console.error("Voting error:", error);
                 

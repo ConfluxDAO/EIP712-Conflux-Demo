@@ -4,7 +4,7 @@ require("dotenv").config();
 async function main() {
   const [signer] = await hre.ethers.getSigners();
   
-  const contractAddress = "0xDD1184EeC78eD419d948887B8793E64a62f13895";
+  const contractAddress = "YOUR_DEPLOYED_CONTRACT_ADDRESS";
 
   const domain = {
     name: "EIP712Voting",
